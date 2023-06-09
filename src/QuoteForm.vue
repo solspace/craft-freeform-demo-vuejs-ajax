@@ -196,7 +196,7 @@ export default {
             try {
                 const response = await saveQuoteSubmission({ reCaptchaValue, formData, formProperties });
 
-                if (response && response.data && response.data['save_quote_Submission'] && response.data['save_quote_Submission'].success) {
+                if (response && response.success) {
                     this.showSuccess();
                 } else if (response && response.errors) {
                     this.showError(response.errors);
