@@ -124,7 +124,7 @@ export default {
         };
     },
     created() {
-        const formId = 1;
+        const formId = 4;
 
         getFormProperties(formId).then(formProperties => {
             this.formProperties = formProperties;
@@ -139,8 +139,8 @@ export default {
         this.successMessage = document.querySelector('#successMessage');
         this.submitButton = document.querySelector('button[type="submit"]');
 
-        this.hideError();
-        this.hideSuccess();
+        this.hideSubmissionError();
+        this.hideSubmissionSuccess();
     },
     methods: {
         handleHowDidYouHearAboutThisJobPosting(event) {
@@ -165,71 +165,83 @@ export default {
             this.submitButton.innerText = 'Submit';
             this.submitButton.style.cursor = 'pointer';
         },
-        showSuccess() {
+        showSubmissionSuccess() {
             this.successMessage.style.display = 'block';
             this.scrollToTop();
         },
-        hideSuccess() {
+        hideSubmissionSuccess() {
             this.successMessage.style.display = 'none';
         },
-        showError(error) {
-            console.error(error);
-
+        showSubmissionError() {
             this.errorMessage.style.display = 'block';
             this.scrollToTop();
         },
-        hideError() {
+        hideSubmissionError() {
             this.errorMessage.style.display = 'none';
+
+            const errors = document.querySelectorAll('.error-message');
+            if (errors) {
+                errors.forEach(error => {
+                    error.classList.remove('flex');
+                    error.classList.add('hidden');
+                });
+            }
         },
         scrollToTop() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         async handleSubmit(event) {
-            this.hideError();
-            this.hideSuccess();
+            this.hideSubmissionError();
+            this.hideSubmissionSuccess();
             this.startProcessing();
 
             const formData = this.formData;
             const formProperties = this.formProperties;
             const reCaptchaValue = this.reCaptchaValue;
 
-            try {
-                const response = await saveQuoteSubmission({ reCaptchaValue, formData, formProperties });
+            const response = await saveQuoteSubmission({ reCaptchaValue, formData, formProperties });
 
-                if (response && response.success) {
-                    this.showSuccess();
-                } else if (response && response.errors) {
-                    this.showError(response.errors);
+            if (response && response.success) {
+                this.showSubmissionSuccess();
+            } else if (response && response.errors) {
+                this.showSubmissionError();
+
+                for (const [key, value] of Object.entries(response.errors)) {
+                    const element = document.querySelector(`.${key}-field .error-message`);
+                    if (element) {
+                        element.innerHTML = value[0];
+                        element.classList.add('flex');
+                        element.classList.remove('hidden');
+                    }
                 }
-            } catch (error) {
-                this.showError(error);
             }
 
             this.stopProcessing();
-            event.target.reset();
         },
     },
 };
 </script>
 
 <template>
-    <div id="successMessage" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" style="display: none;">
-        <p>{{ this.formProperties.successMessage }}</p>
-    </div>
-    <div id="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" style="display: none;">
-        <p>{{ this.formProperties.errorMessage }}</p>
-    </div>
     <form class="text-center flex flex-col items-left justify-left" @submit.prevent="handleSubmit">
         <h3 class="mb-4 text-xl font-normal text-left">Quote Form</h3>
+        <div id="successMessage" class="w-full bg-green-100 border border-green-400 text-sm text-left text-green-700 px-4 py-2 rounded-md mb-8" style="display: none;">
+            <p>{{ this.formProperties.successMessage }}</p>
+        </div>
+        <div id="errorMessage" class="w-full bg-red-100 border border-red-400 text-sm text-left text-red-700 px-4 py-2 rounded-md mb-8" style="display: none;">
+            <p>{{ this.formProperties.errorMessage }}</p>
+        </div>
         <div class="flex flex-col w-full space-y-3">
             <div class="form-row">
-                <div class="field-wrapper">
+                <div class="field-wrapper firstName-field">
                     <label for="firstName">First Name <span class="ml-1 text-[red]">*</span></label>
                     <input class="form-input field-input" name="firstName" type="text" id="firstName" v-model="formData.firstName" v-on:change="event => (formData = { ...formData, firstName: event.target.value })" required />
+                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
                 </div>
-                <div class="field-wrapper">
+                <div class="field-wrapper lastName-field">
                     <label for="lastName">Last Name <span class="ml-1 text-[red]">*</span></label>
                     <input class="form-input field-input" name="lastName" type="text" id="lastName" v-model="formData.lastName" v-on:change="event => (formData = { ...formData, lastName: event.target.value })" required />
+                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
                 </div>
             </div>
             <div class="form-row">
@@ -239,16 +251,18 @@ export default {
                 </div>
             </div>
             <div class="form-row">
-                <div class="field-wrapper">
+                <div class="field-wrapper email-field">
                     <label for="email">Email <span class="ml-1 text-[red]">*</span></label>
                     <div class="text-xs italic text-slate-500">We&apos;ll never share your email with anyone else.</div>
                     <input class="form-input field-input" name="email" type="email" id="email" v-model="formData.email" v-on:change="event => (formData = { ...formData, email: event.target.value })" required />
+                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
                 </div>
             </div>
             <div class="form-row">
-                <div class="field-wrapper">
+                <div class="field-wrapper cellPhone-field">
                     <label for="cellPhone">Cell Phone <span class="ml-1 text-[red]">*</span></label>
                     <input class="form-input field-input" name="cellPhone" type="tel" id="cellPhone" v-model="formData.cellPhone" v-on:change="event => (formData = { ...formData, cellPhone: event.target.value })" required />
+                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
                 </div>
                 <div class="field-wrapper">
                     <label for="homePhone">Home Phone</label>
@@ -260,7 +274,7 @@ export default {
                 </div>
             </div>
             <div class="form-row">
-                <div class="field-wrapper">
+                <div class="field-wrapper subject-field">
                     <label for="subject">Subject <span class="ml-1 text-[red]">*</span></label>
                     <select class="form-select field-input" name="subject" id="subject" v-model="formData.subject" v-on:change="event => (formData = { ...formData, subject: event.target.value })" required>
                         <option value="">I need some help with...</option>
@@ -268,12 +282,13 @@ export default {
                         <option value="practicingMyHammerDance">Practicing my hammer dance</option>
                         <option value="findingMyBellyButton">Finding my belly button</option>
                     </select>
+                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
                 </div>
                 <div class="field-wrapper">
                     <label for="appointmentDate">Appointment Date</label>
                     <input class="form-input field-input" name="appointmentDate" type="text" id="appointmentDate" placeholder="YYYY/MM/DD" autoComplete="off" v-model="formData.appointmentDate" v-on:change="event => (formData = { ...formData, appointmentDate: event.target.value })"  />
                 </div>
-                <div class="field-wrapper">
+                <div class="field-wrapper department-field">
                     <label for="department">Department <span class="ml-1 text-[red]">*</span></label>
                     <select class="form-select field-input" name="department" id="department" v-model="formData.department" v-on:change="event => (formData = { ...formData, department: event.target.value })" required>
                         <option value="">Please choose...</option>
@@ -281,6 +296,7 @@ export default {
                         <option value="service@example.com">Service</option>
                         <option value="support@example.com">Support</option>
                     </select>
+                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
                 </div>
             </div>
             <div class="form-row">
@@ -306,9 +322,10 @@ export default {
                 </div>
             </div>
             <div class="form-row">
-                <div class="field-wrapper">
+                <div class="field-wrapper message-field">
                     <label for="message">Message <span class="ml-1 text-[red]">*</span></label>
                     <textarea class="form-textarea field-input" name="message" id="message" rows={5} v-model="formData.message" v-on:change="event => (formData = { ...formData, message: event.target.value })" required></textarea>
+                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
                 </div>
             </div>
             <div class="form-row">
@@ -329,11 +346,12 @@ export default {
                 </div>
             </div>
             <div class="form-row">
-                <div class="field-wrapper">
+                <div class="field-wrapper acceptTerms-fields">
                     <label for="acceptTerms" class="flex flex-row items-center justify-center">
                         <input class="field-input-checkbox" name="acceptTerms" type="checkbox" id="acceptTerms" value="yes" v-on:change="event => (formData = { ...formData, acceptTerms: event.target.checked ? event.target.value : '' })" required />
                         I agree to the <a href="https://solspace.com" class="mx-1 underline">terms &amp; conditions</a> required by this site. <span class="ml-1 text-[red]">*</span>
                     </label>
+                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
                 </div>
             </div>
             <div class="form-row">
