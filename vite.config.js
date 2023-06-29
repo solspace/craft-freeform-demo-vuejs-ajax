@@ -10,8 +10,15 @@ dns.setDefaultResultOrder('verbatim');
 export default defineConfig({
   plugins: [vue()],
   server: {
-    host: 'localhost',
     port: 3000,
+    proxy: {
+      '/craft': {
+        target: 'https://demo.solspace.net/craft',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/craft/, ''),
+      },
+    },
   },
   resolve: {
     alias: {

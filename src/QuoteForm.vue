@@ -41,7 +41,7 @@ const defaultFormProperties = {
 
 async function getFormProperties(formId) {
     // See https://docs.solspace.com/craft/freeform/v4/developer/graphql/#how-to-render-a-form
-    const response = await fetch(`https://demo.solspace.net/craft/freeform/form/properties/${formId}`, { headers: { 'Accept': 'application/json' }});
+    const response = await fetch(`/craft/freeform/form/properties/${formId}`, { headers: { 'Accept': 'application/json' }});
 
     if (!response.ok) {
         throw new Error('Failed to fetch Craft Freeform Form properties');
@@ -81,7 +81,7 @@ async function saveQuoteSubmission(params) {
 
     body.append('acceptTerms', formData.acceptTerms);
 
-    const response = await fetch('https://demo.solspace.net/craft/actions/freeform/submit', {
+    const response = await fetch('/craft/actions/freeform/submit', {
         method: 'POST',
         headers: {
             'X-CSRF-Token': csrf.token,
