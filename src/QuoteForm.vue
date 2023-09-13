@@ -29,7 +29,7 @@ const defaultFormProperties = {
         value: '',
     },
     freeform_payload: '',
-    reCaptcha: {
+    captcha: {
         enabled: false,
         handle: '',
         name: '',
@@ -40,7 +40,7 @@ const defaultFormProperties = {
 };
 
 async function getFormProperties(formId) {
-    // See https://docs.solspace.com/craft/freeform/v4/developer/graphql/#how-to-render-a-form
+    // See https://docs.solspace.com/craft/freeform/v5/developer/graphql/#how-to-render-a-form
     const response = await fetch(`/craft/freeform/form/properties/${formId}`, { headers: { 'Accept': 'application/json' }});
 
     if (!response.ok) {
@@ -51,8 +51,8 @@ async function getFormProperties(formId) {
 }
 
 async function saveQuoteSubmission(params) {
-    const { reCaptchaValue, formData, formProperties } = params;
-    const { csrf, hash, honeypot, freeform_payload, reCaptcha } = formProperties;
+    const { captchaValue, formData, formProperties } = params;
+    const { csrf, hash, honeypot, freeform_payload, captcha } = formProperties;
 
     const body = new FormData();
     body.append(csrf.name, csrf.token);
@@ -60,7 +60,7 @@ async function saveQuoteSubmission(params) {
 
     body.append('formHash', hash);
     body.append('freeform_payload', freeform_payload);
-    body.append(reCaptcha.name, reCaptchaValue);
+    body.append(captcha.name, captchaValue);
 
     body.append('firstName', formData.firstName);
     body.append('lastName', formData.lastName);
@@ -106,7 +106,7 @@ export default {
         submitButton: null,
         errorMessage: null,
         successMessage: null,
-        reCaptchaValue: null,
+        captchaValue: null,
         formData: defaultFormData,
         formProperties: defaultFormProperties,
     }),
@@ -130,8 +130,8 @@ export default {
             this.formProperties = formProperties;
         });
 
-        this.getReCaptcha().then(reCaptchaValue => {
-            this.reCaptchaValue = reCaptchaValue;
+        this.getReCaptcha().then(captchaValue => {
+            this.captchaValue = captchaValue;
         });
     },
     mounted() {
@@ -197,9 +197,9 @@ export default {
 
             const formData = this.formData;
             const formProperties = this.formProperties;
-            const reCaptchaValue = this.reCaptchaValue;
+            const captchaValue = this.captchaValue;
 
-            const response = await saveQuoteSubmission({ reCaptchaValue, formData, formProperties });
+            const response = await saveQuoteSubmission({ captchaValue, formData, formProperties });
 
             if (response && response.success) {
                 this.showSubmissionSuccess();
