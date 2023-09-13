@@ -139,10 +139,12 @@ export default {
         });
     },
     mounted() {
+        this.spamMessage = document.querySelector('#spamMessage');
         this.errorMessage = document.querySelector('#errorMessage');
         this.successMessage = document.querySelector('#successMessage');
         this.submitButton = document.querySelector('button[type="submit"]');
 
+        this.hideSpamError();
         this.hideSubmissionError();
         this.hideSubmissionSuccess();
     },
@@ -180,6 +182,10 @@ export default {
             this.errorMessage.style.display = 'block';
             this.scrollToTop();
         },
+        showSpamError() {
+          this.spamMessage.style.display = 'block';
+          this.scrollToTop();
+        },
         hideSubmissionError() {
             this.errorMessage.style.display = 'none';
 
@@ -191,10 +197,14 @@ export default {
                 });
             }
         },
+        hideSpamError() {
+            this.spamMessage.style.display = 'none';
+        },
         scrollToTop() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         async handleSubmit(event) {
+            this.hideSpamError();
             this.hideSubmissionError();
             this.hideSubmissionSuccess();
             this.startProcessing();
@@ -209,6 +219,12 @@ export default {
 
             if (response && response.success) {
                 this.showSubmissionSuccess();
+            } else if (response && response.formErrors && response.formErrors.length > 0) {
+                if (response.formErrors.includes('Please verify that you are not a robot.')) {
+                    this.showSpamError();
+                } else if (response.formErrors.includes('Unknown argument')) {
+                    console.error(response.formErrors);
+                }
             } else if (response && response.errors) {
                 this.showSubmissionError();
 
@@ -236,6 +252,9 @@ export default {
         </div>
         <div id="errorMessage" class="w-full bg-red-100 border border-red-400 text-sm text-left text-red-700 px-4 py-2 rounded-md mb-8" style="display: none;">
             <p>{{ this.formProperties.settings.behavior.errorMessage }}</p>
+        </div>
+        <div id="spamMessage" class="w-full bg-red-100 border border-red-400 text-sm text-left text-red-700 px-4 py-2 rounded-md mb-8" style="display: none;">
+            <p>Please verify that you are not a robot.</p>
         </div>
         <div class="flex flex-col w-full space-y-3">
             <div class="form-row">
