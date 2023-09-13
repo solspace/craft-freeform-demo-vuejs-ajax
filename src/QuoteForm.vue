@@ -235,13 +235,13 @@ export default {
             <div class="form-row">
                 <div class="field-wrapper firstName-field">
                     <label for="firstName">First Name <span class="ml-1 text-[red]">*</span></label>
-                    <input class="form-input field-input" name="firstName" type="text" id="firstName" v-model="formData.firstName" v-on:change="event => (formData = { ...formData, firstName: event.target.value })" required />
-                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
+                    <input class="form-input field-input" name="firstName" type="text" id="firstName" v-model="formData.firstName" v-on:change="event => (formData = { ...formData, firstName: event.target.value })" />
+                    <span class="field-error error-message hidden"></span>
                 </div>
                 <div class="field-wrapper lastName-field">
                     <label for="lastName">Last Name <span class="ml-1 text-[red]">*</span></label>
-                    <input class="form-input field-input" name="lastName" type="text" id="lastName" v-model="formData.lastName" v-on:change="event => (formData = { ...formData, lastName: event.target.value })" required />
-                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
+                    <input class="form-input field-input" name="lastName" type="text" id="lastName" v-model="formData.lastName" v-on:change="event => (formData = { ...formData, lastName: event.target.value })" />
+                    <span class="field-error error-message hidden"></span>
                 </div>
             </div>
             <div class="form-row">
@@ -253,16 +253,16 @@ export default {
             <div class="form-row">
                 <div class="field-wrapper email-field">
                     <label for="email">Email <span class="ml-1 text-[red]">*</span></label>
-                    <div class="text-xs italic text-slate-500">We&apos;ll never share your email with anyone else.</div>
-                    <input class="form-input field-input" name="email" type="email" id="email" v-model="formData.email" v-on:change="event => (formData = { ...formData, email: event.target.value })" required />
-                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
+                    <div class="text-xs italic text-slate-400">We&apos;ll never share your email with anyone else.</div>
+                    <input class="form-input field-input" name="email" type="email" id="email" v-model="formData.email" v-on:change="event => (formData = { ...formData, email: event.target.value })" />
+                    <span class="field-error error-message hidden"></span>
                 </div>
             </div>
             <div class="form-row">
                 <div class="field-wrapper cellPhone-field">
                     <label for="cellPhone">Cell Phone <span class="ml-1 text-[red]">*</span></label>
-                    <input class="form-input field-input" name="cellPhone" type="tel" id="cellPhone" v-model="formData.cellPhone" v-on:change="event => (formData = { ...formData, cellPhone: event.target.value })" required />
-                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
+                    <input class="form-input field-input" name="cellPhone" type="tel" id="cellPhone" v-model="formData.cellPhone" v-on:change="event => (formData = { ...formData, cellPhone: event.target.value })" />
+                    <span class="field-error error-message hidden"></span>
                 </div>
                 <div class="field-wrapper">
                     <label for="homePhone">Home Phone</label>
@@ -276,13 +276,13 @@ export default {
             <div class="form-row">
                 <div class="field-wrapper subject-field">
                     <label for="subject">Subject <span class="ml-1 text-[red]">*</span></label>
-                    <select class="form-select field-input" name="subject" id="subject" v-model="formData.subject" v-on:change="event => (formData = { ...formData, subject: event.target.value })" required>
+                    <select class="form-select field-input" name="subject" id="subject" v-model="formData.subject" v-on:change="event => (formData = { ...formData, subject: event.target.value })">
                         <option value="">I need some help with...</option>
                         <option value="myHomework">My homework</option>
                         <option value="practicingMyHammerDance">Practicing my hammer dance</option>
                         <option value="findingMyBellyButton">Finding my belly button</option>
                     </select>
-                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
+                    <span class="field-error error-message hidden"></span>
                 </div>
                 <div class="field-wrapper">
                     <label for="appointmentDate">Appointment Date</label>
@@ -290,13 +290,13 @@ export default {
                 </div>
                 <div class="field-wrapper department-field">
                     <label for="department">Department <span class="ml-1 text-[red]">*</span></label>
-                    <select class="form-select field-input" name="department" id="department" v-model="formData.department" v-on:change="event => (formData = { ...formData, department: event.target.value })" required>
+                    <select class="form-select field-input" name="department" id="department" v-model="formData.department" v-on:change="event => (formData = { ...formData, department: event.target.value })">
                         <option value="">Please choose...</option>
                         <option value="sales@example.com">Sales</option>
                         <option value="service@example.com">Service</option>
                         <option value="support@example.com">Support</option>
                     </select>
-                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
+                    <span class="field-error error-message hidden"></span>
                 </div>
             </div>
             <div class="form-row">
@@ -324,8 +324,8 @@ export default {
             <div class="form-row">
                 <div class="field-wrapper message-field">
                     <label for="message">Message <span class="ml-1 text-[red]">*</span></label>
-                    <textarea class="form-textarea field-input" name="message" id="message" rows={5} v-model="formData.message" v-on:change="event => (formData = { ...formData, message: event.target.value })" required></textarea>
-                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
+                    <textarea class="form-textarea field-input" name="message" id="message" rows={5} v-model="formData.message" v-on:change="event => (formData = { ...formData, message: event.target.value })"></textarea>
+                    <span class="field-error error-message hidden"></span>
                 </div>
             </div>
             <div class="form-row">
@@ -348,10 +348,10 @@ export default {
             <div class="form-row">
                 <div class="field-wrapper acceptTerms-fields">
                     <label for="acceptTerms" class="flex flex-row items-center justify-center">
-                        <input class="field-input-checkbox" name="acceptTerms" type="checkbox" id="acceptTerms" value="yes" v-on:change="event => (formData = { ...formData, acceptTerms: event.target.checked ? event.target.value : '' })" required />
+                        <input class="field-input-checkbox" name="acceptTerms" type="checkbox" id="acceptTerms" value="yes" v-on:change="event => (formData = { ...formData, acceptTerms: event.target.checked ? event.target.value : '' })" />
                         I agree to the <a href="https://solspace.com" class="mx-1 underline">terms &amp; conditions</a> required by this site. <span class="ml-1 text-[red]">*</span>
                     </label>
-                    <span class="error-message hidden w-full text-sm text-left italic text-red-700">This field is required</span>
+                    <span class="field-error error-message hidden"></span>
                 </div>
             </div>
             <div class="form-row">
