@@ -201,6 +201,8 @@ export default {
 
             const response = await saveQuoteSubmission({ reCaptchaValue, formData, formProperties });
 
+            this.stopProcessing();
+
             if (response && response.success) {
                 this.showSubmissionSuccess();
             } else if (response && response.errors) {
@@ -215,8 +217,6 @@ export default {
                     }
                 }
             }
-
-            this.stopProcessing();
         },
     },
 };
