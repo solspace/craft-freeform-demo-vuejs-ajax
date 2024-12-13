@@ -29,11 +29,6 @@ const defaultFormProperties = {
         value: '',
     },
     freeform_payload: '',
-    captcha: {
-        enabled: false,
-        handle: '',
-        name: '',
-    },
     settings: {
       behavior: {
         processingText: '',
@@ -56,7 +51,7 @@ async function getFormProperties(formId) {
 
 async function saveQuoteSubmission(params) {
     const { captchaValue, formData, formProperties } = params;
-    const { csrf, hash, honeypot, freeform_payload, captcha } = formProperties;
+    const { csrf, hash, honeypot, freeform_payload } = formProperties;
 
     const body = new FormData();
     body.append(csrf.name, csrf.token);
@@ -64,7 +59,7 @@ async function saveQuoteSubmission(params) {
 
     body.append('formHash', hash);
     body.append('freeform_payload', freeform_payload);
-    body.append(captcha.name, captchaValue);
+    body.append('g-recaptcha-response', captchaValue);
 
     body.append('firstName', formData.firstName);
     body.append('lastName', formData.lastName);
@@ -92,7 +87,6 @@ async function saveQuoteSubmission(params) {
             'Cache-Control': 'no-cache',
             'X-Requested-With': 'XMLHttpRequest',
             'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
-            'X-Craft-Solspace-Freeform-Mode': 'Headless',
         },
         body,
     });

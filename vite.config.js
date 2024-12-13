@@ -14,6 +14,7 @@ export default defineConfig({
     proxy: {
       '/craft': {
         target: 'https://demo.solspace.net/craft',
+        // target: 'https://craft5.ddev.site',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/craft/, ''),
