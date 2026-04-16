@@ -13,7 +13,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/craft': {
-        target: 'https://demo.solspace.net/craft',
+        target: 'https://craft4.ddev.site',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/craft/, ''),

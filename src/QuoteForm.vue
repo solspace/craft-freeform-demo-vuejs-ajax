@@ -106,7 +106,6 @@ export default {
         submitButton: null,
         errorMessage: null,
         successMessage: null,
-        reCaptchaValue: null,
         formData: defaultFormData,
         formProperties: defaultFormProperties,
     }),
@@ -124,14 +123,11 @@ export default {
         };
     },
     created() {
-        const formId = 4;
+        // ENTER YOUR FORM ID HERE
+        const formId = undefined;
 
         getFormProperties(formId).then(formProperties => {
             this.formProperties = formProperties;
-        });
-
-        this.getReCaptcha().then(reCaptchaValue => {
-            this.reCaptchaValue = reCaptchaValue;
         });
     },
     mounted() {
@@ -200,6 +196,8 @@ export default {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         async handleSubmit(event) {
+            event.preventDefault();
+
             this.hideSpamError();
             this.hideSubmissionError();
             this.hideSubmissionSuccess();
@@ -207,7 +205,7 @@ export default {
 
             const formData = this.formData;
             const formProperties = this.formProperties;
-            const reCaptchaValue = this.reCaptchaValue;
+            const reCaptchaValue = await this.getReCaptcha();
 
             const response = await saveQuoteSubmission({ reCaptchaValue, formData, formProperties });
 

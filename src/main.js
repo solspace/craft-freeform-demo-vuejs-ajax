@@ -4,7 +4,8 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import { VueReCaptcha } from 'vue-recaptcha-v3';
 
-const RECAPTCHA_SITE_KEY = '6Lce6nQmAAAAAO5d4LWC6TkECxNRSG7WNiVj17B1';
+// ENTER YOUR FORM ID HERE
+const RECAPTCHA_SITE_KEY = '';
 
 const app = createApp(App);
 
