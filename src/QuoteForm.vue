@@ -67,7 +67,10 @@ async function saveQuoteSubmission(params) {
 
     body.append('formHash', hash);
     body.append('freeform_payload', freeform_payload);
-    body.append(reCaptcha.name, reCaptchaValue);
+
+    if (reCaptcha?.enabled && reCaptcha.name && reCaptchaValue) {
+        body.append(reCaptcha.name, reCaptchaValue);
+    }
 
     body.append('firstName', formData.firstName);
     body.append('lastName', formData.lastName);
@@ -197,7 +200,10 @@ export default {
             this.spamMessage.style.display = 'none';
         },
         scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth',
+            });
         },
         async handleSubmit(event) {
             event.preventDefault();
