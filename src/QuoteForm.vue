@@ -94,6 +94,7 @@ async function saveQuoteSubmission(params) {
             'Cache-Control': 'no-cache',
             'X-Requested-With': 'XMLHttpRequest',
             'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
+            'X-Craft-Solspace-Freeform-Mode': 'Headless',
         },
         body,
     });
@@ -108,11 +109,13 @@ async function saveQuoteSubmission(params) {
 export default {
     name: 'QuoteForm',
     data: () => ({
-        submitButton: null,
-        errorMessage: null,
-        successMessage: null,
-        formData: defaultFormData,
+        formData: { ...defaultFormData },
         formProperties: defaultFormProperties,
+        showSpam: false,
+        showError: false,
+        showSuccess: false,
+        isProcessing: false,
+        fieldErrors: {},
     }),
     setup() {
         const { executeRecaptcha, recaptchaLoaded } = useReCaptcha();
@@ -120,34 +123,37 @@ export default {
         const getReCaptcha = async () => {
             await recaptchaLoaded();
 
-            return await executeRecaptcha('setup');
+            return await executeRecaptcha('submit');
         };
 
         return {
             getReCaptcha,
         };
     },
-    created() {
-        getFormProperties().then(formProperties => {
-            this.formProperties = formProperties;
-        });
+    computed: {
+        isFormReady() {
+            return Boolean(this.formProperties.csrf?.name && this.formProperties.csrf?.token && this.formProperties.honeypot?.name && this.formProperties.hash && this.formProperties.freeform_payload);
+        },
     },
-    mounted() {
-        this.spamMessage = document.querySelector('#spamMessage');
-        this.errorMessage = document.querySelector('#errorMessage');
-        this.successMessage = document.querySelector('#successMessage');
-        this.submitButton = document.querySelector('button[type="submit"]');
+    created() {
+        getFormProperties()
+            .then(formProperties => {
+                this.formProperties = formProperties;
+            })
+            .catch(error => {
+                console.error(error);
 
-        this.hideSpamError();
-        this.hideSubmissionError();
-        this.hideSubmissionSuccess();
+                this.showError = true;
+            });
     },
     methods: {
         handleHowDidYouHearAboutThisJobPosting(event) {
             let howDidYouHearAboutThisJobPosting = [...this.formData.howDidYouHearAboutThisJobPosting];
 
             if (event.target.checked) {
-                howDidYouHearAboutThisJobPosting.push(event.target.value);
+                if (!howDidYouHearAboutThisJobPosting.includes(event.target.value)) {
+                    howDidYouHearAboutThisJobPosting.push(event.target.value);
+                }
             } else {
                 howDidYouHearAboutThisJobPosting = howDidYouHearAboutThisJobPosting.filter((value) => value !== event.target.value);
             }
@@ -158,84 +164,120 @@ export default {
             };
         },
         startProcessing() {
-            this.submitButton.style.cursor = 'not-allowed';
-            this.submitButton.innerText = this.formProperties.settings.behavior.processingText;
+            this.isProcessing = true;
         },
         stopProcessing() {
-            this.submitButton.innerText = 'Submit';
-            this.submitButton.style.cursor = 'pointer';
+            this.isProcessing = false;
         },
         showSubmissionSuccess() {
-            this.successMessage.style.display = 'block';
+            this.showSuccess = true;
             this.scrollToTop();
         },
         hideSubmissionSuccess() {
-            this.successMessage.style.display = 'none';
+            this.showSuccess = false;
         },
         showSubmissionError() {
-            this.errorMessage.style.display = 'block';
+            this.showError = true;
             this.scrollToTop();
         },
         showSpamError() {
-          this.spamMessage.style.display = 'block';
-          this.scrollToTop();
+            this.showSpam = true;
+            this.scrollToTop();
+        },
+        showFieldError(errors) {
+            const nextErrors = {};
+
+            for (const [key, value] of Object.entries(errors)) {
+                if (!/^-?\d+$/.test(key) && Array.isArray(value) && value.length) {
+                    nextErrors[key] = value[0];
+                }
+            }
+
+            this.fieldErrors = nextErrors;
+        },
+        clearFieldError(fieldName) {
+            const nextErrors = { ...this.fieldErrors };
+
+            delete nextErrors[fieldName];
+
+            this.fieldErrors = nextErrors;
         },
         hideSubmissionError() {
-            this.errorMessage.style.display = 'none';
-
-            const errors = document.querySelectorAll('.error-message');
-            if (errors) {
-                errors.forEach(error => {
-                    error.classList.remove('flex');
-                    error.classList.add('hidden');
-                });
-            }
+            this.showError = false;
+            this.fieldErrors = {};
         },
         hideSpamError() {
-            this.spamMessage.style.display = 'none';
+            this.showSpam = false;
         },
         scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth',
+            });
         },
         async handleSubmit(event) {
             event.preventDefault();
+
+            if (!this.isFormReady) {
+                return;
+            }
 
             this.hideSpamError();
             this.hideSubmissionError();
             this.hideSubmissionSuccess();
             this.startProcessing();
 
-            const formData = this.formData;
-            const formProperties = this.formProperties;
-            const captchaValue = await this.getReCaptcha();
+            try {
+                const formData = this.formData;
+                const formProperties = this.formProperties;
+                const captchaValue = await this.getReCaptcha();
 
-            const response = await saveQuoteSubmission({ captchaValue, formData, formProperties });
+                const response = await saveQuoteSubmission({ captchaValue, formData, formProperties });
 
-            this.stopProcessing();
+                this.stopProcessing();
 
-            this.stopProcessing();
+                if (response && response.success) {
+                    this.formData = { ...defaultFormData };
+                    this.fieldErrors = {};
 
-            if (response && response.success) {
-                this.showSubmissionSuccess();
-            } else if (response && response.formErrors && response.formErrors.length > 0) {
-                if (response.formErrors.includes('Please verify that you are not a robot.')) {
-                    this.showSpamError();
-                } else if (response.formErrors.includes('Unknown argument')) {
-                    console.error(response.formErrors);
-                }
-            } else if (response && response.errors) {
-                this.showSubmissionError();
+                    this.showSubmissionSuccess();
+                } else if (response) {
+                    this.showSubmissionError();
 
-                for (const [key, value] of Object.entries(response.errors)) {
-                    if (!/^-?\d+$/.test(key)) {
-                        const element = document.querySelector(`.${key}-field .error-message`);
-                        if (element) {
-                            element.innerHTML = value[0];
-                            element.classList.add('flex');
-                            element.classList.remove('hidden');
+                    let hasSpamError = false;
+
+                    if (response.errors) {
+                        this.showFieldError(response.errors);
+                    }
+
+
+                    if (response.formErrors && response.formErrors.length > 0) {
+                        const formErrors = response.formErrors;
+
+                        if (formErrors.includes('Please verify that you are not a robot.')) {
+                            hasSpamError = true;
+                        }
+
+                        if (formErrors.includes('Unknown argument')) {
+                            console.error(formErrors);
+                        }
+
+                        if (!hasSpamError && !formErrors.includes('Unknown argument')) {
+                            console.error(formErrors);
                         }
                     }
+
+                    if (hasSpamError) {
+                        this.showSpamError();
+                    }
+                } else {
+                    this.showSubmissionError();
                 }
+            } catch (error) {
+                this.stopProcessing();
+                this.showSubmissionError();
+
+                console.error(error);
             }
         },
     },
@@ -245,26 +287,26 @@ export default {
 <template>
     <form class="text-center flex flex-col items-left justify-left" @submit.prevent="handleSubmit">
         <h3 class="mb-4 text-xl font-normal text-left">Quote Form</h3>
-        <div id="successMessage" class="w-full bg-green-100 border border-green-400 text-sm text-left text-green-700 px-4 py-2 rounded-md mb-8" style="display: none;">
+        <div v-if="showSuccess" id="successMessage" class="w-full bg-green-100 border border-green-400 text-sm text-left text-green-700 px-4 py-2 rounded-md mb-8">
             <p>{{ this.formProperties.settings.behavior.successMessage }}</p>
         </div>
-        <div id="errorMessage" class="w-full bg-red-100 border border-red-400 text-sm text-left text-red-700 px-4 py-2 rounded-md mb-8" style="display: none;">
+        <div v-if="showError" id="errorMessage" class="w-full bg-red-100 border border-red-400 text-sm text-left text-red-700 px-4 py-2 rounded-md mb-8">
             <p>{{ this.formProperties.settings.behavior.errorMessage }}</p>
         </div>
-        <div id="spamMessage" class="w-full bg-red-100 border border-red-400 text-sm text-left text-red-700 px-4 py-2 rounded-md mb-8" style="display: none;">
+        <div v-if="showSpam" id="spamMessage" class="w-full bg-red-100 border border-red-400 text-sm text-left text-red-700 px-4 py-2 rounded-md mb-8">
             <p>Please verify that you are not a robot.</p>
         </div>
         <div class="flex flex-col w-full space-y-3">
             <div class="form-row">
                 <div class="field-wrapper firstName-field">
                     <label for="firstName">First Name <span class="ml-1 text-[red]">*</span></label>
-                    <input class="form-input field-input" name="firstName" type="text" id="firstName" v-model="formData.firstName" v-on:change="event => (formData = { ...formData, firstName: event.target.value })" />
-                    <span class="field-error error-message hidden"></span>
+                    <input class="form-input field-input" name="firstName" type="text" id="firstName" v-model="formData.firstName" v-on:change="event => { formData = { ...formData, firstName: event.target.value }; clearFieldError('firstName'); }" />
+                    <span v-if="fieldErrors.firstName" class="field-error error-message">{{ fieldErrors.firstName }}</span>
                 </div>
                 <div class="field-wrapper lastName-field">
                     <label for="lastName">Last Name <span class="ml-1 text-[red]">*</span></label>
-                    <input class="form-input field-input" name="lastName" type="text" id="lastName" v-model="formData.lastName" v-on:change="event => (formData = { ...formData, lastName: event.target.value })" />
-                    <span class="field-error error-message hidden"></span>
+                    <input class="form-input field-input" name="lastName" type="text" id="lastName" v-model="formData.lastName" v-on:change="event => { formData = { ...formData, lastName: event.target.value }; clearFieldError('lastName'); }" />
+                    <span v-if="fieldErrors.lastName" class="field-error error-message">{{ fieldErrors.lastName }}</span>
                 </div>
             </div>
             <div class="form-row">
@@ -277,15 +319,15 @@ export default {
                 <div class="field-wrapper email-field">
                     <label for="email">Email <span class="ml-1 text-[red]">*</span></label>
                     <div class="text-xs italic text-slate-400">We&apos;ll never share your email with anyone else.</div>
-                    <input class="form-input field-input" name="email" type="email" id="email" v-model="formData.email" v-on:change="event => (formData = { ...formData, email: event.target.value })" />
-                    <span class="field-error error-message hidden"></span>
+                    <input class="form-input field-input" name="email" type="email" id="email" v-model="formData.email" v-on:change="event => { formData = { ...formData, email: event.target.value }; clearFieldError('email'); }" />
+                    <span v-if="fieldErrors.email" class="field-error error-message">{{ fieldErrors.email }}</span>
                 </div>
             </div>
             <div class="form-row">
                 <div class="field-wrapper cellPhone-field">
                     <label for="cellPhone">Cell Phone <span class="ml-1 text-[red]">*</span></label>
-                    <input class="form-input field-input" name="cellPhone" type="tel" id="cellPhone" v-model="formData.cellPhone" v-on:change="event => (formData = { ...formData, cellPhone: event.target.value })" />
-                    <span class="field-error error-message hidden"></span>
+                    <input class="form-input field-input" name="cellPhone" type="tel" id="cellPhone" v-model="formData.cellPhone" v-on:change="event => { formData = { ...formData, cellPhone: event.target.value }; clearFieldError('cellPhone'); }" />
+                    <span v-if="fieldErrors.cellPhone" class="field-error error-message">{{ fieldErrors.cellPhone }}</span>
                 </div>
                 <div class="field-wrapper">
                     <label for="homePhone">Home Phone</label>
@@ -299,13 +341,13 @@ export default {
             <div class="form-row">
                 <div class="field-wrapper subject-field">
                     <label for="subject">Subject <span class="ml-1 text-[red]">*</span></label>
-                    <select class="form-select field-input" name="subject" id="subject" v-model="formData.subject" v-on:change="event => (formData = { ...formData, subject: event.target.value })">
+                    <select class="form-select field-input" name="subject" id="subject" v-model="formData.subject" v-on:change="event => { formData = { ...formData, subject: event.target.value }; clearFieldError('subject'); }">
                         <option value="">I need some help with...</option>
                         <option value="myHomework">My homework</option>
                         <option value="practicingMyHammerDance">Practicing my hammer dance</option>
                         <option value="findingMyBellyButton">Finding my belly button</option>
                     </select>
-                    <span class="field-error error-message hidden"></span>
+                    <span v-if="fieldErrors.subject" class="field-error error-message">{{ fieldErrors.subject }}</span>
                 </div>
                 <div class="field-wrapper">
                     <label for="appointmentDate">Appointment Date</label>
@@ -313,13 +355,13 @@ export default {
                 </div>
                 <div class="field-wrapper department-field">
                     <label for="department">Department <span class="ml-1 text-[red]">*</span></label>
-                    <select class="form-select field-input" name="department" id="department" v-model="formData.department" v-on:change="event => (formData = { ...formData, department: event.target.value })">
+                    <select class="form-select field-input" name="department" id="department" v-model="formData.department" v-on:change="event => { formData = { ...formData, department: event.target.value }; clearFieldError('department'); }">
                         <option value="">Please choose...</option>
                         <option value="sales@example.com">Sales</option>
                         <option value="service@example.com">Service</option>
                         <option value="support@example.com">Support</option>
                     </select>
-                    <span class="field-error error-message hidden"></span>
+                    <span v-if="fieldErrors.department" class="field-error error-message">{{ fieldErrors.department }}</span>
                 </div>
             </div>
             <div class="form-row">
@@ -347,8 +389,8 @@ export default {
             <div class="form-row">
                 <div class="field-wrapper message-field">
                     <label for="message">Message <span class="ml-1 text-[red]">*</span></label>
-                    <textarea class="form-textarea field-input" name="message" id="message" rows={5} v-model="formData.message" v-on:change="event => (formData = { ...formData, message: event.target.value })"></textarea>
-                    <span class="field-error error-message hidden"></span>
+                    <textarea class="form-textarea field-input" name="message" id="message" rows="5" v-model="formData.message" v-on:change="event => { formData = { ...formData, message: event.target.value }; clearFieldError('message'); }"></textarea>
+                    <span v-if="fieldErrors.message" class="field-error error-message">{{ fieldErrors.message }}</span>
                 </div>
             </div>
             <div class="form-row">
@@ -369,17 +411,17 @@ export default {
                 </div>
             </div>
             <div class="form-row">
-                <div class="field-wrapper acceptTerms-fields">
+                <div class="field-wrapper acceptTerms-field">
                     <label for="acceptTerms" class="flex flex-row items-center justify-center">
-                        <input class="field-input-checkbox" name="acceptTerms" type="checkbox" id="acceptTerms" value="yes" v-on:change="event => (formData = { ...formData, acceptTerms: event.target.checked ? event.target.value : '' })" />
+                        <input class="field-input-checkbox" name="acceptTerms" type="checkbox" id="acceptTerms" value="yes" v-on:change="event => { formData = { ...formData, acceptTerms: event.target.checked ? event.target.value : '' }; clearFieldError('acceptTerms'); }" />
                         I agree to the <a href="https://solspace.com" class="mx-1 underline">terms &amp; conditions</a> required by this site. <span class="ml-1 text-[red]">*</span>
                     </label>
-                    <span class="field-error error-message hidden"></span>
+                    <span v-if="fieldErrors.acceptTerms" class="field-error error-message">{{ fieldErrors.acceptTerms }}</span>
                 </div>
             </div>
             <div class="form-row">
                 <div class="flex flex-row items-left justify-left space-y-2 w-full">
-                    <button class="btn-primary" type="submit">Submit</button>
+                    <button class="btn-primary" type="submit" :disabled="isProcessing || !isFormReady" :style="{ cursor: isProcessing || !isFormReady ? 'not-allowed' : 'pointer' }">{{ isProcessing ? (formProperties.settings.behavior.processingText || 'Submitting...') : (!isFormReady ? 'Loading...' : 'Submit') }}</button>
                 </div>
             </div>
         </div>
