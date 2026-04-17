@@ -5,7 +5,7 @@ import App from './App.vue';
 import { VueReCaptcha } from 'vue-recaptcha-v3';
 
 // ENTER YOUR RECAPTCHA KEY HERE
-const RECAPTCHA_SITE_KEY = '';
+const RECAPTCHA_SITE_KEY = undefined;
 
 const app = createApp(App);
 
