@@ -125,7 +125,7 @@ export default {
         const getReCaptcha = async () => {
             await recaptchaLoaded();
 
-            return await executeRecaptcha('setup');
+            return await executeRecaptcha('submit');
         };
 
         return {
