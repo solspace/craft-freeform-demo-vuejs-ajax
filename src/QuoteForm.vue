@@ -1,6 +1,9 @@
 <script>
 import { useReCaptcha } from 'vue-recaptcha-v3';
 
+// ENTER YOUR FORM ID HERE
+const FORM_ID = undefined;
+
 const defaultFormData = {
     workPhone: '',
     subject: '',
@@ -39,9 +42,13 @@ const defaultFormProperties = {
     errorMessage: '',
 };
 
-async function getFormProperties(formId) {
+async function getFormProperties() {
     // See https://docs.solspace.com/craft/freeform/v4/developer/graphql/#how-to-render-a-form
-    const response = await fetch(`/craft/freeform/form/properties/${formId}`, { headers: { 'Accept': 'application/json' }});
+    const response = await fetch(`/craft/freeform/form/properties/${FORM_ID}`, {
+        headers: {
+            'Accept': 'application/json',
+        }
+    });
 
     if (!response.ok) {
         throw new Error('Failed to fetch Craft Freeform Form properties');
@@ -123,10 +130,7 @@ export default {
         };
     },
     created() {
-        // ENTER YOUR FORM ID HERE
-        const formId = undefined;
-
-        getFormProperties(formId).then(formProperties => {
+        getFormProperties().then(formProperties => {
             this.formProperties = formProperties;
         });
     },
