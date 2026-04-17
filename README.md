@@ -1,9 +1,6 @@
 # Freeform + Vue.js + AJAX Demo
 This is a demo of a [Vue.js](https://vuejs.org/) + AJAX, headless project using [Freeform 5](https://docs.solspace.com/craft/freeform/v5) for [Craft CMS 4](https://craftcms.com).
 
-## Freeform Demo
-This demo connects to the [Freeform Demo](https://demo.solspace.net/craft/freeform-demo/) site.
-
 ## reCAPTCHA
 We've implemented reCAPTCHA v3 by default, but reCAPTCHA v2 and hCaptcha are also supported.
 

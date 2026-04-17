@@ -1,6 +1,9 @@
 <script>
 import { useReCaptcha } from 'vue-recaptcha-v3';
 
+// ENTER YOUR FORM ID HERE
+const FORM_ID = undefined;
+
 const defaultFormData = {
     workPhone: '',
     subject: '',
@@ -30,17 +33,21 @@ const defaultFormProperties = {
     },
     freeform_payload: '',
     settings: {
-      behavior: {
-        processingText: '',
-        successMessage: '',
-        errorMessage: '',
-      },
+        behavior: {
+            processingText: '',
+            successMessage: '',
+            errorMessage: '',
+        },
     },
 };
 
-async function getFormProperties(formId) {
+async function getFormProperties() {
     // See https://docs.solspace.com/craft/freeform/v5/developer/graphql/#how-to-render-a-form
-    const response = await fetch(`/craft/freeform/form/properties/${formId}`, { headers: { 'Accept': 'application/json' }});
+    const response = await fetch(`/craft/freeform/form/properties/${FORM_ID}`, {
+        headers: {
+            'Accept': 'application/json',
+        }
+    });
 
     if (!response.ok) {
         throw new Error('Failed to fetch Craft Freeform Form properties');
@@ -104,7 +111,6 @@ export default {
         submitButton: null,
         errorMessage: null,
         successMessage: null,
-        captchaValue: null,
         formData: defaultFormData,
         formProperties: defaultFormProperties,
     }),
@@ -122,14 +128,8 @@ export default {
         };
     },
     created() {
-        const formId = 4;
-
-        getFormProperties(formId).then(formProperties => {
+        getFormProperties().then(formProperties => {
             this.formProperties = formProperties;
-        });
-
-        this.getReCaptcha().then(captchaValue => {
-            this.captchaValue = captchaValue;
         });
     },
     mounted() {
@@ -198,6 +198,8 @@ export default {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         },
         async handleSubmit(event) {
+            event.preventDefault();
+
             this.hideSpamError();
             this.hideSubmissionError();
             this.hideSubmissionSuccess();
@@ -205,9 +207,11 @@ export default {
 
             const formData = this.formData;
             const formProperties = this.formProperties;
-            const captchaValue = this.captchaValue;
+            const captchaValue = await this.getReCaptcha();
 
             const response = await saveQuoteSubmission({ captchaValue, formData, formProperties });
+
+            this.stopProcessing();
 
             this.stopProcessing();
 
