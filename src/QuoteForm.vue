@@ -195,7 +195,10 @@ export default {
             this.spamMessage.style.display = 'none';
         },
         scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth',
+            });
         },
         async handleSubmit(event) {
             event.preventDefault();
